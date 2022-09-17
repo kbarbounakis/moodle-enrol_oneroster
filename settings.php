@@ -233,13 +233,6 @@ if ($ADMIN->fulltree) {
             $roleNames
         );
 
-    // $courseroles = array_merge(
-    //     [
-    //         -1 => get_string('settings_notmapped', 'enrol_oneroster'),
-    //     ],
-    //     role_get_names(\context_course::instance(SITEID), ROLENAME_ALIAS, true)
-    // );
-
     // Mapping for the 'student' role.
     \enrol_oneroster\settings::add_role_mapping($settings, 'student', $allroles, $courseroles, 'student');
 
