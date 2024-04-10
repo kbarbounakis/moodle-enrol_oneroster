@@ -595,9 +595,14 @@ EOF;
      */
     protected function update_existing_user(user_representation $entity, stdClass $remoteuser): stdClass {
         global $DB;
-
-        $localuser = $DB->get_record('user', ['idnumber' => $remoteuser->idnumber]);
-
+        // try to get user mapping
+        $mapping = $this->get_user_mapping($remoteuser->idnumber);
+        if ($mapping) {
+            $localuser = $DB->get_record('user', ['id' => $mapping]);
+        } else {
+            // No mapping found, try to get user by idnumber
+            $localuser = $DB->get_record('user', ['idnumber' => $remoteuser->idnumber]);
+        }
         // The user exists, user_update_user works on user 'id', so fill that in.
         $remoteuser->id = $localuser->id;
 
