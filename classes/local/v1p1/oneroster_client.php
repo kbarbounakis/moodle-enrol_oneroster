@@ -318,6 +318,11 @@ EOF;
             // Only fetch users last modified in the onlysince period.
             $classfilter->add_filter('dateLastModified',  $onlysince->format('o-m-d'), '>');
         }
+        // select active academic session
+        $academic_session = get_config('enrol_oneroster', 'datasync_academic_session');
+        if ($academic_session) {
+            $classfilter->add_filter('terms.sourcedId', $academic_session, '=');
+        }
 
         $this->get_trace()->output("Fetching class data", 3);
         $classes = $school->get_classes([], $classfilter);
@@ -330,17 +335,13 @@ EOF;
                 ),
                 4
             );
-
+            // update or create class
             $this->update_or_create_course($class);
-
-            // Note: In an ideal world, enrollments would happen here.
-            // However during development we discovered that some services do not work well enough to filter correctly
-            // on the sourcedId of the Class entity.
-        }
-
-        $this->get_trace()->output("Fetching enrolments data", 3);
-        foreach ($school->get_enrollments() as $enrollment) {
-            $this->update_or_create_enrolment($enrollment);
+            // fetching enrollments for class
+            $this->get_trace()->output(sprintf("Fetching enrolments data for %s", $class->get('title')), 4);
+            foreach ($class->get_enrollments() as $enrollment) {
+                $this->update_or_create_enrolment($enrollment);
+            }
         }
     }
 
