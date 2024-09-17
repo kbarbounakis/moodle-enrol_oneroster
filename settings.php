@@ -295,7 +295,7 @@ if ($ADMIN->fulltree) {
         'enrol_oneroster/datasync_academic_session',
         get_string('settings_datasync_academic_session', 'enrol_oneroster'),
         get_string('settings_datasync_academic_session_desc', 'enrol_oneroster'),
-        [],
+        '',
         $academic_sessions
     ));
 
