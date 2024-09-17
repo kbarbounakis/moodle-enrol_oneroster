@@ -560,10 +560,18 @@ EOF;
         $user = core_user::get_user_by_username($remoteuser->username);
         if ($user) {
             $localuser = \core_user::get_user($user->id);
+            // issue #3: validate syncing existing user without idnumber
+            // if idnumber is empty
+            if (empty($localuser->idnumber)) {
+                // set idnumber with the one provided by remoteuser
+                $localuser->idnumber = $remoteuser->idnumber;
+                // and update local user
+                user_update_user($localuser, false, false);
+            }
+            // finally create user mapping
             $this->create_user_mapping($localuser, $remoteuser->idnumber);
-
             $this->get_trace()->output(sprintf("Skipping update/create of user %s merged into local user %s",
-                $remoteuser->idnumber,
+                $remoteuser->username,
                 $localuser->idnumber
             ), 4);
 
@@ -607,10 +615,9 @@ EOF;
         $remoteuser->id = $localuser->id;
 
         if ($localuser->timemodified > converter::from_datetime_to_unix($entity->get('dateLastModified'))) {
-            $this->get_trace()->output(sprintf("Skipping update of existing user %s with id %s (%s)",
-                $remoteuser->username,
-                $remoteuser->id,
-                $remoteuser->idnumber
+            $this->get_trace()->output(sprintf("Skipping update of existing user %s with id %s",
+                $localuser->username,
+                $localuser->id
             ), 4);
 
             return $localuser;
@@ -919,9 +926,9 @@ EOF;
             $sql = <<<EOF
                 SELECT eom.mappedid, u.id
                 FROM {enrol_oneroster_user_map} eom
-                JOIN {user} u ON u.idnumber = eom.parentid
+                JOIN {user} u ON u.idnumber = eom.parentid 
+                WHERE eom.mappedid IS NOT NULL
 EOF;
-
             $this->usermappings = $DB->get_records_sql_menu($sql);
         }
 
