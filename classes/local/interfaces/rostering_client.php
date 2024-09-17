@@ -52,4 +52,5 @@ interface rostering_client {
      * @return  array
      */
     public function fetch_organisation_list(): Iterable;
+    
 }

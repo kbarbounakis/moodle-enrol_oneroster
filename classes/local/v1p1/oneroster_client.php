@@ -1011,4 +1011,13 @@ EOF;
     protected function get_metrics(): stdClass {
         return (object) $this->metrics;
     }
+
+    /**
+     * Fetch the list of organisations that can be syncronised.
+     *
+     * @return  array
+     */
+    public function fetch_academic_session_list(): Iterable {
+        return $this->get_container()->get_collection_factory()->get_academic_sessions();
+    }
 }

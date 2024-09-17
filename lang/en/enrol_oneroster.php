@@ -78,3 +78,5 @@ This is also used to fetch the list of available schools that should be synchron
 $string['settings_testconnection_link'] = 'Test connection';
 $string['test_oneroster_connection'] = 'Test One Roster Connection';
 $string['fullsync'] = 'Full sync of One Roster';
+$string['settings_datasync_academic_session'] = 'Select academic session';
+$string['settings_datasync_academic_session_desc'] = 'Select the academic session for synchronizing classes and student enrollments.';
