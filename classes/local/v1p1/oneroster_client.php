@@ -420,7 +420,9 @@ EOF;
      * @return  array
      */
     public function fetch_organisation_list(): Iterable {
-        return $this->get_container()->get_collection_factory()->get_orgs();
+        return $this->get_container()->get_collection_factory()->get_orgs(array(
+            'sort' => 'name'
+        ));
     }
 
     /**
@@ -1019,6 +1021,9 @@ EOF;
      * @return  array
      */
     public function fetch_academic_session_list(): Iterable {
-        return $this->get_container()->get_collection_factory()->get_academic_sessions();
+        return $this->get_container()->get_collection_factory()->get_academic_sessions(array(
+            'sort' => 'schoolYear',
+            'orderBy' => 'asc'
+        ));
     }
 }

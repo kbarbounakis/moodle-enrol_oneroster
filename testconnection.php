@@ -67,7 +67,7 @@ $client->authenticate();
 $foundorgs = [];
 $organisations = $client->fetch_organisation_list();
 foreach ($organisations as $org) {
-    $foundorgs[$org->get('sourcedId')] = $org->get('name');
+    $foundorgs[$org->get('sourcedId')] = $org->get('name') . ' (' . $org->get('identifier') . ')' ;
 }
 set_config('availableschools', json_encode($foundorgs), 'enrol_oneroster');
 
