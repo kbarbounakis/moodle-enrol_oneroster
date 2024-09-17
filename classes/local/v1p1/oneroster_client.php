@@ -338,7 +338,7 @@ EOF;
             // update or create class
             $this->update_or_create_course($class);
             // fetching enrollments for class
-            $this->get_trace()->output(sprintf("Fetching enrolments data for %s", $class->get('title')), 4);
+            $this->get_trace()->output(sprintf("Fetching enrolments data for '%s'", $class->get('title')), 4);
             foreach ($class->get_enrollments() as $enrollment) {
                 $this->update_or_create_enrolment($enrollment);
             }
