@@ -927,7 +927,7 @@ EOF;
                 SELECT eom.mappedid, u.id
                 FROM {enrol_oneroster_user_map} eom
                 JOIN {user} u ON u.idnumber = eom.parentid 
-                WHERE eom.mappedid IS NOT NULL
+                WHERE NOT (eom.parentid IS NULL OR eom.parentid = '')
 EOF;
             $this->usermappings = $DB->get_records_sql_menu($sql);
         }
