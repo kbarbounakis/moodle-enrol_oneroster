@@ -67,10 +67,19 @@ $client->authenticate();
 $foundorgs = [];
 $organisations = $client->fetch_organisation_list();
 foreach ($organisations as $org) {
-    $foundorgs[$org->get('sourcedId')] = $org->get('name');
+    $foundorgs[$org->get('sourcedId')] = $org->get('name') . ' (' . $org->get('identifier') . ')' ;
 }
-
 set_config('availableschools', json_encode($foundorgs), 'enrol_oneroster');
+
+$academic_sessions = $client->fetch_academic_session_list();
+$found_sessions = [];
+foreach ($academic_sessions as $academic_session) {
+    // get only semesters
+    if ($academic_session->get('type') == 'semester') {
+        $found_sessions[$academic_session->get('sourcedId')] = $academic_session->get('title');
+    }
+}
+set_config('academic_sessions', json_encode($found_sessions), 'enrol_oneroster');
 
 redirect(
     $returnurl,

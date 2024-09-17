@@ -281,6 +281,24 @@ if ($ADMIN->fulltree) {
         $availableschools
     ));
 
+
+    $academic_sessions = [];
+    if ($academic_sessions_json = get_config('enrol_oneroster', 'academic_sessions')) {
+        $academic_sessions = (array) json_decode($academic_sessions_json);
+    }
+
+    if (empty($academic_sessions_json)) {
+        $academic_sessions[''] = get_string('none', 'admin');
+    }
+
+    $settings->add(new admin_setting_configselect(
+        'enrol_oneroster/datasync_academic_session',
+        get_string('settings_datasync_academic_session', 'enrol_oneroster'),
+        get_string('settings_datasync_academic_session_desc', 'enrol_oneroster'),
+        [],
+        $academic_sessions
+    ));
+
 }
 
 if ($hassiteconfig) {
