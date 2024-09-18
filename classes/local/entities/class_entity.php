@@ -27,6 +27,8 @@ namespace enrol_oneroster\local\entities;
 use coding_exception;
 use enrol_oneroster\local\converter;
 use enrol_oneroster\local\collections\enrollments as enrollments_collection;
+use enrol_oneroster\local\collections\students_for_class as students_collection;
+use enrol_oneroster\local\collections\teachers_for_class as teachers_collection;
 use enrol_oneroster\local\interfaces\container as container_interface;
 use enrol_oneroster\local\interfaces\course_representation;
 use enrol_oneroster\local\interfaces\user_representation;
@@ -204,5 +206,49 @@ class class_entity extends entity implements course_representation {
 
         $filter->add_filter('class', $this->get('sourcedId'));
         return $this->container->get_collection_factory()->get_enrollments($params, $filter, $recordfilter);
+    }
+
+    /**
+     * Fetch all students in the Class.
+     *
+     * @param   array $params
+     * @param   filter|null $filter
+     * @param   callable $recordfilter
+     * @return  students_collection
+     */
+    public function get_students(
+        array $params = [],
+        ?filter $filter = null,
+        ?callable $recordfilter = null
+
+    ): students_collection {
+        if ($filter === null) {
+            $filter = $this->container->get_filter_instance();
+        }
+        //$filter->add_filter('class', $this->get('sourcedId'));
+        $class = $this;
+        return $this->container->get_collection_factory()->get_students_for_class($class, $params, $filter, $recordfilter);
+    }
+
+    /**
+     * Fetch all teachers in the Class.
+     *
+     * @param   array $params
+     * @param   filter|null $filter
+     * @param   callable $recordfilter
+     * @return  teachers_collection
+     */
+    public function get_teachers(
+        array $params = [],
+        ?filter $filter = null,
+        ?callable $recordfilter = null
+
+    ): teachers_collection {
+        if ($filter === null) {
+            $filter = $this->container->get_filter_instance();
+        }
+        //$filter->add_filter('class', $this->get('sourcedId'));
+        $class = $this;
+        return $this->container->get_collection_factory()->get_teachers_for_class($class, $params, $filter, $recordfilter);
     }
 }

@@ -164,7 +164,7 @@ trait oneroster_client {
 
         // Only fetch users last modified in the past day.
         // All timezones in One Roster are Zulu.
-        $this->sync_users_in_schools($schoolidstosync, $onlysince);
+        //$this->sync_users_in_schools($schoolidstosync, $onlysince);
 
         // Fetch the details of all enrolment instances before running the sync.
         $this->cache_enrolment_instances();
@@ -337,10 +337,62 @@ EOF;
             );
             // update or create class
             $this->update_or_create_course($class);
-            // fetching enrollments for class
-            $this->get_trace()->output(sprintf("Fetching enrolments data for '%s'", $class->get('title')), 4);
-            foreach ($class->get_enrollments() as $enrollment) {
-                $this->update_or_create_enrolment($enrollment);
+
+            $this->get_trace()->output(
+                sprintf(
+                    "Synchronizing teacher accounts for '%s'",
+                    $class->get('title')
+                ),
+                4
+            );
+            // get class students and sync them
+            $index = 0;
+            $teachers = $class->get_teachers();
+                foreach ($teachers as $teacher) {
+                    $index++;
+                    $this->update_or_create_user($teacher);
+                }
+
+            $this->get_trace()->output(
+                sprintf(
+                    "Finished synchronizing %s teacher account(s)",
+                    $index
+                ),
+                4
+            );
+            
+            $teacher_count = $index;
+
+            $this->get_trace()->output(
+                sprintf(
+                    "Synchronizing student accounts for '%s'",
+                    $class->get('title')
+                ),
+                4
+            );
+            $index = 0;
+            // get class students and sync them
+            $students = $class->get_students();
+                foreach ($students as $student) {
+                    $index++;
+                    $this->update_or_create_user($student);
+                }
+
+            $student_count = $index;
+
+            $this->get_trace()->output(
+                sprintf(
+                    "Finished synchronizing %s student account(s)",
+                    $index
+                ),
+                4
+            );
+            if ($teacher_count > 0 || $student_count > 0) {
+                // fetching enrollments for class
+                $this->get_trace()->output(sprintf("Fetching enrolments data for '%s'", $class->get('title')), 4);
+                foreach ($class->get_enrollments() as $enrollment) {
+                    $this->update_or_create_enrolment($enrollment);
+                }
             }
         }
     }
