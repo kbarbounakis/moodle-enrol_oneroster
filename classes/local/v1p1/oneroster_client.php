@@ -25,6 +25,7 @@
 namespace enrol_oneroster\local\v1p1;
 
 use DateTime;
+use Exception;
 use context_user;
 use core_course_category;
 use core_php_time_limit;
@@ -140,6 +141,7 @@ trait oneroster_client {
      */
     public function sync_roster(?int $onlysincetime = null): void {
         global $DB;
+        global $CFG;
 
         // Most systems do not have many organisations in them.
         // Fetch all organisations to add them to the cache.
@@ -176,8 +178,19 @@ trait oneroster_client {
             $this->get_trace()->output("Fetching school with sourcedId '{$schoolidtosync}'", 2);
             $school = $this->get_container()->get_entity_factory()->fetch_org_by_id($schoolidtosync);
             if ($school instanceof school_entity) {
-                $this->get_trace()->output("Synchronising school '{$schoolidtosync}'", 2);
-                $this->sync_school($school, $onlysince);
+                $school_name = $school->get('name');
+                $this->get_trace()->output("Synchronising school '{$schoolidtosync} {$school_name}'", 2);
+                // use try catch to continue with next school if any error
+                try {
+                    $this->sync_school($school, $onlysince);
+                } 
+                catch (Exception $e) {
+                    $this->get_trace()->output("Error synchronising school '{$schoolidtosync} {$school_name}'", 2);
+                    $this->get_trace()->output("Error '{$e->getMessage()}'", 2);
+                    if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
+                        $this->get_trace()->output($e->getTraceAsString(), 3);
+                    }   
+                }
             } else {
                 $this->get_trace()->output("Organisation with sourcedId '{$schoolidtosync}' is not a school. Skipping.", 3);
             }
@@ -304,6 +317,7 @@ EOF;
      * @param   null|DateTime $onlysince
      */
     public function sync_school(school_entity $school, ?DateTime $onlysince = null): void {
+        global $CFG;
         // Updating the category for this school.
         $this->update_or_create_category($school);
 
@@ -347,16 +361,27 @@ EOF;
             );
             // get class students and sync them
             $index = 0;
+            $error_count = 0;
             $teachers = $class->get_teachers();
                 foreach ($teachers as $teacher) {
                     $index++;
-                    $this->update_or_create_user($teacher);
+                    try {
+                        $this->update_or_create_user($teacher);
+                    } catch (Exception $e) {
+                        $error_count++;
+                        $this->get_trace()->output("Error synchronising teacher '{$teacher->get('username')}'", 4);
+                        $this->get_trace()->output("Error '{$e->getMessage()}'", 4);
+                        if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
+                            $this->get_trace()->output($e->getTraceAsString(), 3);
+                        }
+                    }
                 }
 
             $this->get_trace()->output(
                 sprintf(
-                    "Finished synchronizing %s teacher account(s)",
-                    $index
+                    "Finished synchronizing %s teacher account(s) with %s error(s)",
+                    $index,
+                    $error_count
                 ),
                 4
             );
@@ -371,19 +396,31 @@ EOF;
                 4
             );
             $index = 0;
+            $error_count = 0;
             // get class students and sync them
             $students = $class->get_students();
                 foreach ($students as $student) {
                     $index++;
-                    $this->update_or_create_user($student);
+                    // use try catch to continue with next student if any error
+                    try {
+                        $this->update_or_create_user($student);
+                    } catch (Exception $e) {
+                        $error_count++;
+                        $this->get_trace()->output("Error synchronising student '{$student->get('username')}'", 4);
+                        $this->get_trace()->output("Error '{$e->getMessage()}'", 4);
+                        if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
+                            $this->get_trace()->output($e->getTraceAsString(), 3);
+                        }
+                    }
                 }
 
             $student_count = $index;
 
             $this->get_trace()->output(
                 sprintf(
-                    "Finished synchronizing %s student account(s)",
-                    $index
+                    "Finished synchronizing %s student account(s) with %s error(s)",
+                    $index,
+                    $error_count
                 ),
                 4
             );
