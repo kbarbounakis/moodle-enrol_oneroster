@@ -191,6 +191,12 @@ trait oneroster_client {
      */
     public function synchronise(?int $onlysincetime = null): void {
         if (class_implements($this, rostering_client::class)) {
+            $caching = get_config('enrol_oneroster', 'oneroster_caching');
+            // if caching is disabled, purge the cache before start
+            if ($caching != '1') {
+                // purge cache and let process to create new cache items
+                $this->get_container()->get_cache_factory()->purge_cache();
+            }
             $this->sync_roster($onlysincetime);
         }
     }

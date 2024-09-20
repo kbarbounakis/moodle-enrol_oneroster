@@ -118,6 +118,16 @@ if ($ADMIN->fulltree) {
         4
     ));
 
+    $yesno = array(get_string('no'), get_string('yes'));
+    $settings->add(new admin_setting_configselect(
+        'enrol_oneroster/oneroster_caching',
+        get_string('settings_connection_oneroster_caching', 'enrol_oneroster'),
+        get_string('settings_connection_oneroster_caching_desc', 'enrol_oneroster'),
+        0,
+        $yesno
+    ));
+
+
     // Test connection.
     $settings->add(new admin_setting_heading(
         'enrol_oneroster/testconnection',
