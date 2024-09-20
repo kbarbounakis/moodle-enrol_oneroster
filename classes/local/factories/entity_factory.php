@@ -73,6 +73,7 @@ class entity_factory extends abstract_factory implements entity_factory_interfac
      * @return  stdClass|null The data stored in the cache
      */
     protected function fetch_from_cache(string $entitytype, string $id, ?filter $filter = null): ?stdClass {
+        
         if ($filter !== null) {
             // It is not possible to use the cache when a filter is applied.
             return null;

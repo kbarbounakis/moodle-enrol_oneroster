@@ -80,3 +80,5 @@ $string['test_oneroster_connection'] = 'Test One Roster Connection';
 $string['fullsync'] = 'Full sync of One Roster';
 $string['settings_datasync_academic_session'] = 'Select academic session';
 $string['settings_datasync_academic_session_desc'] = 'Select the academic session for synchronizing classes and student enrollments.';
+$string['settings_connection_oneroster_caching'] = 'Caching';
+$string['settings_connection_oneroster_caching_desc'] = 'Enable caching of OneRoster data across different sync process to improve performance.';

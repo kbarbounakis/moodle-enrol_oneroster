@@ -77,4 +77,10 @@ abstract class cache_factory extends abstract_factory implements cache_factory_i
      * @return  cache
      */
     abstract public function get_enrolment_cache(): cache;
+    /**
+     * Purge entity cache.
+     *
+     * @return  cache
+     */
+    abstract public function purge_cache();
 }
