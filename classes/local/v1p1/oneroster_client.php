@@ -904,7 +904,7 @@ EOF;
                     $enroldata->timestart,
                     $enroldata->timeend
                 );
-                $this->add_metric('enrollment', 'delete');
+                $this->add_metric('enrollment', 'update');
             }
         } else {
             $this->get_trace()->output(sprintf(
@@ -925,6 +925,26 @@ EOF;
             );
             $this->add_metric('enrollment', 'create');
         }
+
+        if ($moodleroleid) {
+            // get context
+            $context = \context_course::instance($instance->courseid, TRUE);
+            $component = 'enrol_'.$instance->enrol;
+            $itemid = $instance->id;
+            // check if role assignment already exists
+            $ras = $DB->get_records('role_assignments', array('roleid'=>$moodleroleid, 'contextid'=>$context->id, 'userid'=>$moodleuserid, 'component'=>$component, 'itemid'=>$itemid), 'id');
+            if ($ras) {
+                return;
+            }
+            $this->get_trace()->output(
+                "Updating role assignment for " .
+                $userentity->get('identifier') .
+                " in {$instance->courseid}",
+                4);
+            // asign role
+            role_assign($moodleroleid, $moodleuserid, $context->id, $component, $itemid);
+        }
+
     }
 
     /**
