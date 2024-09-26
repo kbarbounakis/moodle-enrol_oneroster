@@ -171,8 +171,6 @@ trait oneroster_client {
         // Fetch the details of all enrolment instances before running the sync.
         $this->cache_enrolment_instances();
 
-        $this->fetch_current_enrolment_data();
-
         // Synchronise all courses, classes, and enrolments.
         foreach ($schoolidstosync as $schoolidtosync) {
             $this->get_trace()->output("Fetching school with sourcedId '{$schoolidtosync}'", 2);
@@ -195,34 +193,7 @@ trait oneroster_client {
                 $this->get_trace()->output("Organisation with sourcedId '{$schoolidtosync}' is not a school. Skipping.", 3);
             }
         }
-
-        $this->get_trace()->output("Processing unenrolments", 3);
-        foreach ($this->existingroleassignments as $instanceid => $ra) {
-            $instance = $DB->get_record('enrol', ['id' => $instanceid]);
-            if ($instance === null) {
-                $this->get_trace()->output("No enrolment instance found with id {$instanceid}");
-                continue;
-            }
-
-            $context = \context_course::instance($instance->courseid);
-
-            // Unassign roles for this user.
-            foreach ($ra as $userid => $roleids) {
-                foreach (array_keys($roleids) as $roleid) {
-                    if ($roleid) {
-                        role_unassign($roleid, $userid, $context->id, 'enrol_oneroster', $instance->id);
-                    }
-                }
-            }
-
-            // Unenrol the user if they have no remaining roles in this enrolment instance.
-            // Note: A manual enrolment in the same course is a separate instance.
-            $this->get_plugin_instance()->unenrol_user(
-                $instance,
-                $userid
-            );
-        }
-
+        
         $this->get_trace()->output("Completed synchronisation of Rostering information");
         $this->get_trace()->output(sprintf("Entity\t\tCreate\tUpdate\tDelete"), 1);
         foreach ($this->get_metrics() as $thing => $actions) {
@@ -242,7 +213,7 @@ trait oneroster_client {
     /**
      * Fetch current enrolment data into memory for later operations.
      */
-    protected function fetch_current_enrolment_data(): void {
+    protected function fetch_current_enrolment_data($courseid): void {
         global $DB;
 
         $sql = <<<EOF
@@ -254,23 +225,24 @@ trait oneroster_client {
         FROM {user_enrolments} ue
         JOIN {enrol} e ON ue.enrolid = e.id
    LEFT JOIN {role_assignments} ra ON ra.component = :component AND ra.itemid = e.id
-       WHERE e.enrol = :enrol
+       WHERE e.enrol = :enrol AND e.courseid = :courseid
 EOF;
 
         $rs = $DB->get_recordset_sql($sql, [
             'component' => 'enrol_oneroster',
             'enrol' => 'oneroster',
+            'courseid' => $courseid
         ]);
+
+        $this->existingroleassignments = [];
 
         foreach ($rs as $row) {
             if (!array_key_exists($row->enrolid, $this->existingroleassignments)) {
                 $this->existingroleassignments[$row->enrolid] = [];
             }
-
             if (!array_key_exists($row->userid, $this->existingroleassignments[$row->enrolid])) {
                 $this->existingroleassignments[$row->enrolid][$row->userid] = [];
             }
-
             $this->existingroleassignments[$row->enrolid][$row->userid][$row->roleid] = true;
         }
         $rs->close();
@@ -317,7 +289,7 @@ EOF;
      * @param   null|DateTime $onlysince
      */
     public function sync_school(school_entity $school, ?DateTime $onlysince = null): void {
-        global $CFG;
+        global $CFG, $DB;
         // Updating the category for this school.
         $this->update_or_create_category($school);
 
@@ -349,8 +321,19 @@ EOF;
                 ),
                 4
             );
+
             // update or create class
-            $this->update_or_create_course($class);
+            $localcourse = $this->update_or_create_course($class);
+
+            $this->get_trace()->output(
+                sprintf(
+                    "Getting existing enrollments for course '%s' with id %s",
+                    $class->get('title'),
+                    $class->get('sourcedId')
+                ),
+                4
+            );
+            $this->fetch_current_enrolment_data($localcourse->id);
 
             $this->get_trace()->output(
                 sprintf(
@@ -431,6 +414,53 @@ EOF;
                     $this->update_or_create_enrolment($enrollment);
                 }
             }
+            foreach ($this->existingroleassignments as $instanceid => $ra) {
+                $instance = $DB->get_record('enrol', ['id' => $instanceid]);
+                if ($instance === null) {
+                    $this->get_trace()->output("No enrolment instance found with id {$instanceid}");
+                    continue;
+                }
+                $context = \context_course::instance($instance->courseid);
+                if (count($ra) == 0) {
+                    $this->get_trace()->output(
+                        sprintf(
+                            "No unenrollments found for course with id %s",
+                            $instance->courseid
+                        ),
+                        4
+                    );
+                } else {
+                    $this->get_trace()->output(
+                        sprintf(
+                            "Processing unenrollments for course with id %s",
+                            $instance->courseid
+                        ),
+                        4
+                    );
+                    // Unassign roles for this user.
+                    foreach ($ra as $userid => $roleids) {
+                        foreach (array_keys($roleids) as $roleid) {
+                            if ($roleid) {
+                                role_unassign($roleid, $userid, $context->id, 'enrol_oneroster', $instance->id);
+                            }
+                        }
+                        // unenrol the user
+                        $localuser = \core_user::get_user($userid);
+                        $this->get_trace()->output(sprintf(
+                            "Unenroling user %s from course with id %s",
+                            $localuser->username,
+                            $localcourse->id
+                        ), 4);
+
+                        $this->get_plugin_instance()->unenrol_user(
+                            $instance,
+                            $userid
+                        );
+                    }
+                }
+                
+            }
+
         }
     }
 
