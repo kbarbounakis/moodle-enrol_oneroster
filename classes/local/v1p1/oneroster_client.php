@@ -224,7 +224,7 @@ trait oneroster_client {
             ra.roleid
         FROM {user_enrolments} ue
         JOIN {enrol} e ON ue.enrolid = e.id
-   LEFT JOIN {role_assignments} ra ON ra.component = :component AND ra.itemid = e.id
+   LEFT JOIN {role_assignments} ra ON ra.component = :component AND ra.itemid = e.id AND ra.userid=ue.userid
        WHERE e.enrol = :enrol AND e.courseid = :courseid
 EOF;
 
@@ -234,8 +234,8 @@ EOF;
             'courseid' => $courseid
         ]);
 
+        // clear array
         $this->existingroleassignments = [];
-
         foreach ($rs as $row) {
             if (!array_key_exists($row->enrolid, $this->existingroleassignments)) {
                 $this->existingroleassignments[$row->enrolid] = [];
@@ -331,7 +331,7 @@ EOF;
                     $class->get('title'),
                     $class->get('sourcedId')
                 ),
-                4
+                5
             );
             $this->fetch_current_enrolment_data($localcourse->id);
 
@@ -340,7 +340,7 @@ EOF;
                     "Synchronizing teacher accounts for '%s'",
                     $class->get('title')
                 ),
-                4
+                5
             );
             // get class students and sync them
             $index = 0;
@@ -355,7 +355,7 @@ EOF;
                         $this->get_trace()->output("Error synchronising teacher '{$teacher->get('username')}'", 4);
                         $this->get_trace()->output("Error '{$e->getMessage()}'", 4);
                         if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
-                            $this->get_trace()->output($e->getTraceAsString(), 3);
+                            $this->get_trace()->output($e->getTraceAsString(), 4);
                         }
                     }
                 }
@@ -366,7 +366,7 @@ EOF;
                     $index,
                     $error_count
                 ),
-                4
+                5
             );
             
             $teacher_count = $index;
@@ -376,7 +376,7 @@ EOF;
                     "Synchronizing student accounts for '%s'",
                     $class->get('title')
                 ),
-                4
+                5
             );
             $index = 0;
             $error_count = 0;
@@ -392,7 +392,7 @@ EOF;
                         $this->get_trace()->output("Error synchronising student '{$student->get('username')}'", 4);
                         $this->get_trace()->output("Error '{$e->getMessage()}'", 4);
                         if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
-                            $this->get_trace()->output($e->getTraceAsString(), 3);
+                            $this->get_trace()->output($e->getTraceAsString(), 4);
                         }
                     }
                 }
@@ -405,11 +405,11 @@ EOF;
                     $index,
                     $error_count
                 ),
-                4
+                5
             );
             if ($teacher_count > 0 || $student_count > 0) {
                 // fetching enrollments for class
-                $this->get_trace()->output(sprintf("Fetching enrolments data for '%s'", $class->get('title')), 4);
+                $this->get_trace()->output(sprintf("Fetching enrolments data for '%s'", $class->get('title')), 5);
                 foreach ($class->get_enrollments() as $enrollment) {
                     $this->update_or_create_enrolment($enrollment);
                 }
@@ -421,21 +421,14 @@ EOF;
                     continue;
                 }
                 $context = \context_course::instance($instance->courseid);
-                if (count($ra) == 0) {
+                if (count($ra) > 0) {
                     $this->get_trace()->output(
                         sprintf(
-                            "No unenrollments found for course with id %s",
+                            "Processing %s disenrollment(s) for course with id %s",
+                            count($ra),
                             $instance->courseid
                         ),
-                        4
-                    );
-                } else {
-                    $this->get_trace()->output(
-                        sprintf(
-                            "Processing unenrollments for course with id %s",
-                            $instance->courseid
-                        ),
-                        4
+                        5
                     );
                     // Unassign roles for this user.
                     foreach ($ra as $userid => $roleids) {
@@ -450,7 +443,7 @@ EOF;
                             "Unenroling user %s from course with id %s",
                             $localuser->username,
                             $localcourse->id
-                        ), 4);
+                        ), 5);
 
                         $this->get_plugin_instance()->unenrol_user(
                             $instance,
@@ -458,8 +451,16 @@ EOF;
                         );
                     }
                 }
-                
             }
+
+            $this->get_trace()->output(
+                sprintf(
+                    "Finished synchronising course '%s' with id %s",
+                    $class->get('title'),
+                    $class->get('sourcedId')
+                ),
+                4
+            );
 
         }
     }
@@ -678,6 +679,7 @@ EOF;
      * @return  stdClass
      */
     protected function create_new_user(user_representation $entity, stdClass $remoteuser): stdClass {
+        global $CFG;
         // Check whether there is an existing user with the same username.
         $user = core_user::get_user_by_username($remoteuser->username);
         if ($user) {
@@ -692,11 +694,12 @@ EOF;
             }
             // finally create user mapping
             $this->create_user_mapping($localuser, $remoteuser->idnumber);
-            $this->get_trace()->output(sprintf("Skipping update/create of user %s merged into local user %s",
-                $remoteuser->username,
-                $localuser->idnumber
-            ), 4);
-
+            if ($CFG->debugdeveloper) {
+                $this->get_trace()->output(sprintf("Skipping update/create of user %s merged into local user %s",
+                    $remoteuser->username,
+                    $localuser->idnumber
+                ), 5);
+            }
             return $localuser;
         }
 
@@ -705,7 +708,7 @@ EOF;
         $this->get_trace()->output(sprintf("Creating new user %s (%s)",
             $remoteuser->username,
             $remoteuser->idnumber
-        ), 4);
+        ), 5);
 
         $localuserid = user_create_user($remoteuser);
         $this->add_metric('user', 'create');
@@ -724,7 +727,7 @@ EOF;
      * @return  stdClass
      */
     protected function update_existing_user(user_representation $entity, stdClass $remoteuser): stdClass {
-        global $DB;
+        global $DB, $CFG;
         // try to get user mapping
         $mapping = $this->get_user_mapping($remoteuser->idnumber);
         if ($mapping) {
@@ -737,11 +740,12 @@ EOF;
         $remoteuser->id = $localuser->id;
 
         if ($localuser->timemodified > converter::from_datetime_to_unix($entity->get('dateLastModified'))) {
-            $this->get_trace()->output(sprintf("Skipping update of existing user %s with id %s",
-                $localuser->username,
-                $localuser->id
-            ), 4);
-
+            if ($CFG->debugdeveloper) {
+                $this->get_trace()->output(sprintf("Skipping update of existing user %s with id %s",
+                    $localuser->username,
+                    $localuser->id
+                ), 5);
+            }
             return $localuser;
         }
 
@@ -752,7 +756,7 @@ EOF;
             $remoteuser->idnumber,
             $localuser->timemodified,
             converter::from_datetime_to_unix($entity->get('dateLastModified'))
-        ), 4);
+        ), 5);
 
         user_update_user($remoteuser);
         $this->add_metric('user', 'update');
@@ -868,17 +872,17 @@ EOF;
      * @return  stdClass
      */
     protected function update_or_create_enrolment(enrollment_representation $entity) {
-        global $DB;
+        global $DB, $CFG;
 
         // Fetch the user details for this enrolment.
         $userentity = $entity->get_user_entity();
         if ($userentity === null) {
-            $this->get_trace()->output("Unable to fetch user entity for enrollment: " . $entity->get('sourcedId'), 4);
+            $this->get_trace()->output("Unable to fetch user entity for enrollment: " . $entity->get('sourcedId'), 5);
             return;
         }
         $moodleuserid = $this->get_user_mapping_for_user($userentity);
         if ($moodleuserid === null) {
-            $this->get_trace()->output("No user found for user " . $userentity->get('identifier'), 4);
+            $this->get_trace()->output("No user found for user " . $userentity->get('identifier'), 5);
             return;
         }
 
@@ -886,7 +890,7 @@ EOF;
         $roledata = $entity->get_role_data();
         $moodleroleid = $this->get_role_mapping($roledata->role, (int) CONTEXT_COURSE);
         if ($moodleroleid === null) {
-            $this->get_trace()->output("No user found for role '{$roledata->role}'", 4);
+            $this->get_trace()->output("No user found for role '{$roledata->role}'", 5);
             // This role has no mapping in Moodle.
             return;
         }
@@ -900,8 +904,8 @@ EOF;
         }
 
         $enroldata = $entity->get_enrolment_data();
-
-        if ($existing = $DB->get_record('user_enrolments', ['userid' => $moodleuserid, 'enrolid' => $instance->id])) {
+        $existing = $DB->get_record('user_enrolments', ['userid' => $moodleuserid, 'enrolid' => $instance->id]);
+        if ($existing) {
             $enrolmentkeys = [
                 'status',
                 'timestart',
@@ -909,11 +913,14 @@ EOF;
             ];
 
             // Unset the current mapping to prevent the user from being unenrolled.
-            unset($this->existingroleassignments[$instance->id][$moodleuserid][$moodleroleid]);
-            if (empty($this->existingroleassignments[$instance->id][$moodleuserid])) {
-                unset($this->existingroleassignments[$instance->id][$moodleuserid]);
+            $user_role_assignments = $this->existingroleassignments[$instance->id][$moodleuserid];
+            if ($user_role_assignments) {
+                unset($user_role_assignments[$moodleroleid]);
+                if (empty($user_role_assignments)) {
+                    unset($this->existingroleassignments[$instance->id][$moodleuserid]);
+                }
             }
-
+            
             foreach ($enrolmentkeys as $key) {
                 $update = false;
                 if ($existing->{$key} != $enroldata->{$key}) {
@@ -926,7 +933,7 @@ EOF;
                     "Updating existing enrolment for " .
                     $userentity->get('identifier') .
                     " in {$instance->courseid} from {$enroldata->timestart} to {$enroldata->timeend}",
-                    4);
+                    5);
                 $this->get_plugin_instance()->update_user_enrol(
                     $instance,
                     $moodleuserid,
@@ -943,7 +950,7 @@ EOF;
                 $instance->courseid,
                 $enroldata->timestart,
                 $enroldata->timeend
-            ), 4);
+            ), 5);
             $this->get_plugin_instance()->enrol_user(
                 $instance,
                 $moodleuserid,
@@ -966,11 +973,13 @@ EOF;
             if ($ras) {
                 return;
             }
-            $this->get_trace()->output(
-                "Updating role assignment for " .
-                $userentity->get('identifier') .
-                " in {$instance->courseid}",
-                4);
+            if ($CFG->debugdeveloper) {
+                $this->get_trace()->output(
+                    "Updating role assignment for " .
+                    $userentity->get('identifier') .
+                    " in {$instance->courseid}",
+                    5);
+            }
             // asign role
             role_assign($moodleroleid, $moodleuserid, $context->id, $component, $itemid);
         }
