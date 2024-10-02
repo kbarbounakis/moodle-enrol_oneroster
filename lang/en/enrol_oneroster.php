@@ -82,3 +82,5 @@ $string['settings_datasync_academic_session'] = 'Select academic session';
 $string['settings_datasync_academic_session_desc'] = 'Select the academic session for synchronizing classes and student enrollments.';
 $string['settings_connection_oneroster_caching'] = 'Caching';
 $string['settings_connection_oneroster_caching_desc'] = 'Enable caching of OneRoster data across different sync process to improve performance.';
+$string['settings_connection_oneroster_sync_agents'] = 'User Agents';
+$string['settings_connection_oneroster_sync_agents_desc'] = 'Enable synchronization of user agents. A user agent expresses the relationship between humans e.g. a student is being linked to its parents';

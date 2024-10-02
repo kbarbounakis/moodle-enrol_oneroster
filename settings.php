@@ -264,6 +264,15 @@ if ($ADMIN->fulltree) {
     // Mapping for the 'relative' role.
     \enrol_oneroster\settings::add_role_mapping($settings, 'relative', $allroles, $courseroles);
 
+    $yesno = array(get_string('no'), get_string('yes'));
+    $settings->add(new admin_setting_configselect(
+        'enrol_oneroster/oneroster_sync_agents',
+        get_string('settings_connection_oneroster_sync_agents', 'enrol_oneroster'),
+        get_string('settings_connection_oneroster_sync_agents_desc', 'enrol_oneroster'),
+        0,
+        $yesno
+    ));
+
     // Data to synchronise:
     // - Fetch list of available schools button; and
     // - List of schools to sync.

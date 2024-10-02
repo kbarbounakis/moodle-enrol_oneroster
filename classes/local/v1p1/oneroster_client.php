@@ -666,8 +666,10 @@ EOF;
 
         // See whether this user is an agent for any other user.
         // Note: This is only applied for students as per section 4.1.2 of the specification.
-        $this->sync_user_agents($entity, $localuser);
-
+        $syncagents = get_config('enrol_oneroster', 'oneroster_sync_agents');
+        if ($syncagents) {
+            $this->sync_user_agents($entity, $localuser);
+        }
         return $localuser;
     }
 
