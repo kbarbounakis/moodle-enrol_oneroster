@@ -185,9 +185,9 @@ trait oneroster_client {
                 catch (Exception $e) {
                     $this->get_trace()->output("Error synchronising school '{$schoolidtosync} {$school_name}'", 2);
                     $this->get_trace()->output("Error '{$e->getMessage()}'", 2);
-                    if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
-                        $this->get_trace()->output($e->getTraceAsString(), 3);
-                    }   
+                    // if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
+                    //     $this->get_trace()->output($e->getTraceAsString(), 3);
+                    // }   
                 }
             } else {
                 $this->get_trace()->output("Organisation with sourcedId '{$schoolidtosync}' is not a school. Skipping.", 3);
@@ -354,9 +354,9 @@ EOF;
                         $error_count++;
                         $this->get_trace()->output("Error synchronising teacher '{$teacher->get('username')}'", 4);
                         $this->get_trace()->output("Error '{$e->getMessage()}'", 4);
-                        if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
-                            $this->get_trace()->output($e->getTraceAsString(), 4);
-                        }
+                        // if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
+                        //     $this->get_trace()->output($e->getTraceAsString(), 4);
+                        // }
                     }
                 }
 
@@ -391,9 +391,9 @@ EOF;
                         $error_count++;
                         $this->get_trace()->output("Error synchronising student '{$student->get('username')}'", 4);
                         $this->get_trace()->output("Error '{$e->getMessage()}'", 4);
-                        if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
-                            $this->get_trace()->output($e->getTraceAsString(), 4);
-                        }
+                        // if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
+                        //     $this->get_trace()->output($e->getTraceAsString(), 4);
+                        // }
                     }
                 }
 
@@ -700,12 +700,12 @@ EOF;
                 // create a new user mapping (an in-memory mapping)
                 $this->usermappings[$remoteuser->idnumber] = $user->id;
             }
-            if ($CFG->debugdeveloper) {
-                $this->get_trace()->output(sprintf("Skipping update/create of user %s merged into local user %s",
-                    $remoteuser->username,
-                    $user->idnumber
-                ), 5);
-            }
+            // if ($CFG->debugdeveloper) {
+            //     $this->get_trace()->output(sprintf("Skipping update/create of user %s merged into local user %s",
+            //         $remoteuser->username,
+            //         $user->idnumber
+            //     ), 5);
+            // }
             return $user;
         }
 
@@ -755,12 +755,12 @@ EOF;
         $remoteuser->id = $localuser->id;
 
         if ($localuser->timemodified > converter::from_datetime_to_unix($entity->get('dateLastModified'))) {
-            if ($CFG->debugdeveloper) {
-                $this->get_trace()->output(sprintf("Skipping update of existing user %s with id %s",
-                    $localuser->username,
-                    $localuser->id
-                ), 5);
-            }
+            // if ($CFG->debugdeveloper) {
+            //     $this->get_trace()->output(sprintf("Skipping update of existing user %s with id %s",
+            //         $localuser->username,
+            //         $localuser->id
+            //     ), 5);
+            // }
             return $localuser;
         }
 
@@ -988,13 +988,13 @@ EOF;
             if ($ras) {
                 return;
             }
-            if ($CFG->debugdeveloper) {
-                $this->get_trace()->output(
-                    "Updating role assignment for " .
-                    $userentity->get('identifier') .
-                    " in {$instance->courseid}",
-                    5);
-            }
+            // if ($CFG->debugdeveloper) {
+            //     $this->get_trace()->output(
+            //         "Updating role assignment for " .
+            //         $userentity->get('identifier') .
+            //         " in {$instance->courseid}",
+            //         5);
+            // }
             // asign role
             role_assign($moodleroleid, $moodleuserid, $context->id, $component, $itemid);
         }
