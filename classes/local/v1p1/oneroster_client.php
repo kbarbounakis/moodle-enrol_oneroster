@@ -711,10 +711,10 @@ EOF;
 
         // No user with the same idnumber, or a mapped idnumber.
         // Create a new user.
-        $this->get_trace()->output(sprintf("Creating new user %s (%s)",
-            $remoteuser->username,
-            $remoteuser->idnumber
-        ), 5);
+        // $this->get_trace()->output(sprintf("Creating new user %s (%s)",
+        //     $remoteuser->username,
+        //     $remoteuser->idnumber
+        // ), 5);
 
         $localuserid = user_create_user($remoteuser);
         if ($localuserid == FALSE) {
@@ -959,13 +959,13 @@ EOF;
                 $this->add_metric('enrollment', 'update');
             }
         } else {
-            $this->get_trace()->output(sprintf(
-                "Enroling user %s into %s from %d to %d",
-                $userentity->get('identifier'),
-                $instance->courseid,
-                $enroldata->timestart,
-                $enroldata->timeend
-            ), 5);
+            // $this->get_trace()->output(sprintf(
+            //     "Enroling user %s into %s from %d to %d",
+            //     $userentity->get('identifier'),
+            //     $instance->courseid,
+            //     $enroldata->timestart,
+            //     $enroldata->timeend
+            // ), 5);
             $this->get_plugin_instance()->enrol_user(
                 $instance,
                 $moodleuserid,
