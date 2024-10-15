@@ -685,24 +685,23 @@ EOF;
         // Check whether there is an existing user with the same username.
         $user = core_user::get_user_by_username($remoteuser->username);
         if ($user) {
-            $localuser = \core_user::get_user($user->id);
             // issue #3: validate syncing existing user without idnumber
             // if idnumber is empty
-            if (empty($localuser->idnumber)) {
+            if (empty($user->idnumber)) {
                 // set idnumber with the one provided by remoteuser
-                $localuser->idnumber = $remoteuser->idnumber;
+                $user->idnumber = $remoteuser->idnumber;
                 // and update local user
-                user_update_user($localuser, false, false);
+                user_update_user($user, false, false);
             }
             // finally create user mapping
-            $this->create_user_mapping($localuser, $remoteuser->idnumber);
+            $this->create_user_mapping($user, $remoteuser->idnumber);
             if ($CFG->debugdeveloper) {
                 $this->get_trace()->output(sprintf("Skipping update/create of user %s merged into local user %s",
                     $remoteuser->username,
-                    $localuser->idnumber
+                    $user->idnumber
                 ), 5);
             }
-            return $localuser;
+            return $user;
         }
 
         // No user with the same idnumber, or a mapped idnumber.
@@ -713,9 +712,11 @@ EOF;
         ), 5);
 
         $localuserid = user_create_user($remoteuser);
+        if ($localuserid == FALSE) {
+            throw new Exception("Failed to create new user");
+        }
         $this->add_metric('user', 'create');
-
-        $localuser = \core_user::get_user($localuserid);
+        $localuser = core_user::get_user($localuserid);
         $this->create_user_mapping($localuser, $remoteuser->idnumber);
 
         return $localuser;
@@ -735,8 +736,16 @@ EOF;
         if ($mapping) {
             $localuser = $DB->get_record('user', ['id' => $mapping]);
         } else {
+            // validate the given idnumber (it should be unique across the system)
+
             // No mapping found, try to get user by idnumber
-            $localuser = $DB->get_record('user', ['idnumber' => $remoteuser->idnumber]);
+            $users = $DB->get_records('user', [
+                'idnumber' => $remoteuser->idnumber
+            ]);
+            if (count($users) > 1) {
+                throw new Exception("Multiple users found with idnumber {$remoteuser->idnumber}");
+            }
+            $localuser = array_shift($users);
         }
         // The user exists, user_update_user works on user 'id', so fill that in.
         $remoteuser->id = $localuser->id;
@@ -763,7 +772,7 @@ EOF;
         user_update_user($remoteuser);
         $this->add_metric('user', 'update');
 
-        return \core_user::get_user($localuser->id);
+        return core_user::get_user($localuser->id);
     }
 
     /**
@@ -1096,11 +1105,9 @@ EOF;
      */
     protected function get_user_mapping(string $idnumber): ?int {
         $mappings = $this->get_user_mappings();
-
         if (array_key_exists($idnumber, $mappings)) {
             return (int) $mappings[$idnumber];
         }
-
         return null;
     }
 
@@ -1113,11 +1120,39 @@ EOF;
     protected function create_user_mapping(stdClass $user, string $mappedid): void {
         global $DB;
 
+        if (empty($user->idnumber)) {
+            // throw exception for invalid idnumber
+            throw new Exception('User must have an idnumber to be mapped');
+        }
+        if (empty($mappedid)) {
+            // throw exception for invalid mappedid
+            throw new Exception('Mapped ID must be provided to create a mapping');
+        }
+
+        if (array_key_exists($user->idnumber, $this->usermappings)) {
+            // already mapped
+            if ($this->usermappings[$user->idnumber] === $user->id) {
+                // already mapped
+                return;
+            }
+        }
+
+        // validate if user already mapped
+        $exists = $DB->record_exists('enrol_oneroster_user_map', [
+            'parentid' => $user->idnumber,
+            'mappedid' => $mappedid,
+        ]);
+        if ($exists) {
+            // already mapped
+            $this->usermappings[$user->idnumber] = $user->id;
+            return;
+        }
+        // otherwise, create new mapping
         $DB->insert_record('enrol_oneroster_user_map', (object) [
             'parentid' => $user->idnumber,
             'mappedid' => $mappedid,
         ]);
-
+        // update usermappings
         $this->usermappings[$user->idnumber] = $user->id;
     }
 
@@ -1129,7 +1164,6 @@ EOF;
      */
     protected function get_user_mapping_for_user(user_representation $entity): ?int {
         $userdata = $entity->get_user_data();
-
         return $this->get_user_mapping($userdata->idnumber);
     }
 
