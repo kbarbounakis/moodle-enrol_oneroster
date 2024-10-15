@@ -695,6 +695,11 @@ EOF;
             }
             // finally create user mapping
             $this->create_user_mapping($user, $remoteuser->idnumber);
+            // if idnumber is not empty and different from remoteuser idnumber
+            if ($user->idnumber != $remoteuser->idnumber) {
+                // create a new user mapping (an in-memory mapping)
+                $this->usermappings[$remoteuser->idnumber] = $user->id;
+            }
             if ($CFG->debugdeveloper) {
                 $this->get_trace()->output(sprintf("Skipping update/create of user %s merged into local user %s",
                     $remoteuser->username,
@@ -737,7 +742,6 @@ EOF;
             $localuser = $DB->get_record('user', ['id' => $mapping]);
         } else {
             // validate the given idnumber (it should be unique across the system)
-
             // No mapping found, try to get user by idnumber
             $users = $DB->get_records('user', [
                 'idnumber' => $remoteuser->idnumber
