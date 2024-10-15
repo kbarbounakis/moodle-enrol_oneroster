@@ -190,6 +190,9 @@ trait oneroster_client {
      * @param   int $onlysincetime
      */
     public function synchronise(?int $onlysincetime = null): void {
+        global $CFG;
+        // set debug mode
+        $CFG->debugdeveloper = FALSE;
         if (class_implements($this, rostering_client::class)) {
             $caching = get_config('enrol_oneroster', 'oneroster_caching');
             // if caching is disabled, purge the cache before start
