@@ -90,10 +90,24 @@ class enrollment extends entity implements enrollment_representation {
     public function get_user_entity(): ?user {
         // Fetch the user details.
         $userref = $this->get('user');
-
-        // The parentref is a guidref and should contain both the sourcedId and the type.
-        // It also contains an href, but this is not reliable and cannot be used.
-        return $this->container->get_entity_factory()->fetch_user_by_id($userref->sourcedId);
+        // if user is null
+        if ($userref == null) {
+            // do nothing and exit
+            return null;
+        }
+        // check if $userref is a string
+        // important note: this condition is invalid because user must be an object reference 
+        // and may throw an exception
+        // 
+        if (is_string($userref)) {
+            // try to handle string
+            return $this->container->get_entity_factory()->fetch_user_by_id($userref);    
+        }
+        // otherwise use sourcedId to fetch user
+        if (is_string($userref->sourcedId)) {
+            return $this->container->get_entity_factory()->fetch_user_by_id($userref->sourcedId);
+        }
+        return null;
     }
 
     /**

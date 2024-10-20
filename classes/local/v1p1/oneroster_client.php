@@ -718,10 +718,20 @@ EOF;
 
         $localuserid = user_create_user($remoteuser);
         if ($localuserid == FALSE) {
+            $this->get_trace()->output(sprintf("Failed to create new user %s (%s)",
+                $remoteuser->username,
+                $remoteuser->idnumber
+            ), 5);
             throw new Exception("Failed to create new user");
         }
         $this->add_metric('user', 'create');
         $localuser = core_user::get_user($localuserid);
+        if ($localuserid == FALSE) {
+            $this->get_trace()->output(sprintf("Failed to get new user with id %s",
+                $localuserid
+            ), 5);
+            throw new Exception("Failed to get new user");
+        }
         $this->create_user_mapping($localuser, $remoteuser->idnumber);
 
         return $localuser;
