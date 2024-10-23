@@ -46,6 +46,7 @@ use enrol_oneroster\local\interfaces\enrollment_representation;
 use enrol_oneroster\local\collections\orgs as orgs_collection;
 use enrol_oneroster\local\collections\schools as schools_collection;
 use enrol_oneroster\local\collections\terms as terms_collection;
+use enrol_oneroster\local\entities\class_entity;
 use enrol_oneroster\local\v1p1\endpoints\rostering as rostering_endpoint;
 use enrol_oneroster\local\entities\org as org_entity;
 use enrol_oneroster\local\entities\school as school_entity;
@@ -281,7 +282,6 @@ EOF;
         }
         $this->get_trace()->output("Finished processing users. Processed {$usercount} users", 3);
     }
-
     /**
      * Synchronise the entire School.
      *
@@ -312,7 +312,32 @@ EOF;
 
         $this->get_trace()->output("Fetching class data", 3);
         $classes = $school->get_classes([], $classfilter);
+        // get class snapshot cache
+        $snapshots = $this->container->get_cache_factory()->get_class_snapshot_cache();
         foreach ($classes as $class) {
+            // get class snapshot
+            $sourcedid = $class->get('sourcedId');
+            $snapshot = $snapshots->get($sourcedid);
+            if ($snapshot) {
+                // get class last modified date
+                $lastmodified = converter::from_datetime_to_unix($class->get('dateLastModified'));
+                // and snapshot last modified date
+                $datelastmodified = converter::from_datetime_to_unix($snapshot->dateLastModified);
+                // if class has not been modified after last snapshot
+                if ($lastmodified != null && $datelastmodified >= $lastmodified) {
+                    // do nothing and continue
+                    $this->get_trace()->output(
+                        sprintf(
+                            "Skipping class '%s' with id %s as it has not been modified",
+                            $class->get('title'),
+                            $class->get('sourcedId')
+                        ),
+                        4
+                    );
+                    continue;
+                }
+            }
+
             $this->get_trace()->output(
                 sprintf(
                     "Synchronising course '%s' with id %s",
@@ -461,7 +486,10 @@ EOF;
                 ),
                 4
             );
-
+            // get class data
+            $data = $class->get_data();
+            // and update snapshot cache
+            $snapshots->set($data->sourcedId, $data);
         }
     }
 

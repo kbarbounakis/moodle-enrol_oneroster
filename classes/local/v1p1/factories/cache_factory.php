@@ -90,6 +90,10 @@ class cache_factory extends parent_cache_factory {
         return cache::make('enrol_oneroster', 'v1p1_remote_enrolments');
     }
 
+    public function get_class_snapshot_cache(): cache {
+        return cache::make('enrol_oneroster', 'v1p1_remote_class_snapshots');
+    }
+
     /**
      * Purge the cache.
      */
@@ -100,6 +104,7 @@ class cache_factory extends parent_cache_factory {
         $this->get_course_cache()->purge();
         $this->get_user_cache()->purge();
         $this->get_enrolment_cache()->purge();
+        $this->get_class_snapshot_cache()->purge();
     }
 
 }

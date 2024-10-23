@@ -68,4 +68,11 @@ $definitions = [
         'staticacceleration' => true,
         'staticaccelerationsize' => 1000,
     ],
+    'v1p1_remote_class_snapshots' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => false,
+        'simpledata' => true,
+        'staticacceleration' => true,
+        'staticaccelerationsize' => 1000,
+    ],
 ];
