@@ -83,4 +83,6 @@ abstract class cache_factory extends abstract_factory implements cache_factory_i
      * @return  cache
      */
     abstract public function purge_cache();
+
+    abstract public function get_class_snapshot_cache(): cache;
 }
