@@ -311,6 +311,9 @@ EOF;
 
         if ($filter) {
             foreach ($filter as $key => $value) {
+                if ($key == 'school') {
+                    continue;
+                }
                 $classfilter->add_filter($key, $value);
             }
         }

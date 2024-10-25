@@ -14,7 +14,7 @@ class class_webhook extends external_api {
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters(
             [
-                'classCode' => new external_value(
+                'sourcedId' => new external_value(
                         PARAM_TEXT,
                         'OneRoster class code',
                         VALUE_REQUIRED
@@ -28,7 +28,7 @@ class class_webhook extends external_api {
         );
     }
 
-    public static function execute($classCode, $school = null): array {
+    public static function execute($sourcedId, $school = null): array {
         global $DB;
 
         $result = true;
@@ -47,7 +47,7 @@ class class_webhook extends external_api {
         );
         // create extra filter for the specific class
         $filter = [
-            'classCode' => $classCode
+            'sourcedId' => $sourcedId
         ];
         if ($school) {
             $filter['school'] = $school;
