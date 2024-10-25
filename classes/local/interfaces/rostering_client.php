@@ -35,7 +35,7 @@ interface rostering_client {
     /**
      * Get the rostering endpoint for this version of the API.
      *
-     * @return rostering
+     * @return rostering_endpoint
      */
     public function get_rostering_endpoint(): rostering_endpoint;
 
@@ -44,7 +44,7 @@ interface rostering_client {
      *
      * @param   int $onlysincetime
      */
-    public function sync_roster(?int $onlysincetime = null): void;
+    public function sync_roster(?int $onlysincetime = null, ?array $filter = null): void;
 
     /**
      * Fetch the list of organisations that can be syncronised.
