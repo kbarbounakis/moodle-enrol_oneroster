@@ -74,7 +74,7 @@ interface client {
      *
      * @param   int $onlysincetime
      */
-    public function synchronise(?int $onlysincetime = null): void;
+    public function synchronise(?int $onlysincetime = null, ?array $filter = null): void;
 
     /**
      * Authenticate against the One Roster endpoint as required.
