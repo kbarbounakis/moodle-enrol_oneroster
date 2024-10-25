@@ -189,7 +189,7 @@ trait oneroster_client {
      *
      * @param   int $onlysincetime
      */
-    public function synchronise(?int $onlysincetime = null): void {
+    public function synchronise(?int $onlysincetime = null, ?array $filter = null): void {
         global $CFG;
         // set debug mode
         $CFG->debugdeveloper = FALSE;
@@ -200,7 +200,7 @@ trait oneroster_client {
                 // purge cache and let process to create new cache items
                 $this->get_container()->get_cache_factory()->purge_cache();
             }
-            $this->sync_roster($onlysincetime);
+            $this->sync_roster($onlysincetime, $filter);
         }
     }
 

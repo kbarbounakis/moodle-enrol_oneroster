@@ -140,7 +140,7 @@ trait oneroster_client {
      *
      * @param   int $onlysincetime
      */
-    public function sync_roster(?int $onlysincetime = null): void {
+    public function sync_roster(?int $onlysincetime = null, ?array $filter = null): void {
         global $DB;
         global $CFG;
 
@@ -149,6 +149,10 @@ trait oneroster_client {
         $this->fetch_organisation_list();
 
         $schoolidstosync = explode(',', get_config('enrol_oneroster', 'datasync_schools'));
+        // if filter contains school, only sync that school
+        if (array_key_exists('school', $filter)) {
+            $schoolidstosync = [$filter['school']];
+        }
         $countofschools = count($schoolidstosync);
 
         $this->get_trace()->output("Processing {$countofschools} schools");
@@ -181,7 +185,7 @@ trait oneroster_client {
                 $this->get_trace()->output("Synchronising school '{$schoolidtosync} {$school_name}'", 2);
                 // use try catch to continue with next school if any error
                 try {
-                    $this->sync_school($school, $onlysince);
+                    $this->sync_school($school, $onlysince, $filter);
                 } 
                 catch (Exception $e) {
                     $this->get_trace()->output("Error synchronising school '{$schoolidtosync} {$school_name}'", 2);
@@ -288,7 +292,7 @@ EOF;
      * @param   school_entity $school
      * @param   null|DateTime $onlysince
      */
-    public function sync_school(school_entity $school, ?DateTime $onlysince = null): void {
+    public function sync_school(school_entity $school, ?DateTime $onlysince = null, ?array $filter = null): void {
         global $CFG, $DB;
         // Updating the category for this school.
         $this->update_or_create_category($school);
@@ -304,6 +308,13 @@ EOF;
             // Only fetch users last modified in the onlysince period.
             $classfilter->add_filter('dateLastModified',  $onlysince->format('o-m-d'), '>');
         }
+
+        if ($filter) {
+            foreach ($filter as $key => $value) {
+                $classfilter->add_filter($key, $value);
+            }
+        }
+
         // select active academic session
         $academic_session = get_config('enrol_oneroster', 'datasync_academic_session');
         if ($academic_session) {
