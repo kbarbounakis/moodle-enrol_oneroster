@@ -150,7 +150,7 @@ trait oneroster_client {
 
         $schoolidstosync = explode(',', get_config('enrol_oneroster', 'datasync_schools'));
         // if filter contains school, only sync that school
-        if (array_key_exists('school', $filter)) {
+        if (is_array($filter) && array_key_exists('school', $filter)) {
             $schoolidstosync = [$filter['school']];
         }
         $countofschools = count($schoolidstosync);
