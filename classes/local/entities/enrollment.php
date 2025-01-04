@@ -175,4 +175,16 @@ class enrollment extends entity implements enrollment_representation {
         // A user is enrolled in a class, which we use as a representation of a Moodle course.
         return $this->get_class_entity();
     }
+
+    public function get_enrolment_term(): ?stdClass {
+        $metadata = $this->get('metadata');
+        if (empty($metadata)) {
+            return null;
+        }
+        if (is_string($metadata->term)) {
+            return $this->container->get_entity_factory()->fetch_term_by_id($metadata->term);
+        }
+        return null;
+    }
+
 }

@@ -57,4 +57,11 @@ interface enrollment_representation {
      * @return  course_representation
      */
     public function get_course_representation(): course_representation;
+
+    /**
+     * Get the term of the enrollment, if available.
+     *
+     * @return  stdClass
+     */
+    public function get_enrolment_term(): ?stdClass;
 }
