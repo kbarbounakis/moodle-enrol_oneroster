@@ -543,7 +543,7 @@ EOF;
     /**
      * Create course group using the given academic session
      * @param \stdClass $course
-     * @param \stdClass $term
+     * @param term_entity $term
      * @return \stdClass
      */
     protected function create_course_group_from_term(stdClass $course, term_entity $term): stdClass {

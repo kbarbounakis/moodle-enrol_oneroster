@@ -85,4 +85,4 @@ $string['settings_connection_oneroster_caching_desc'] = 'Enable caching of OneRo
 $string['settings_connection_oneroster_sync_agents'] = 'User Agents';
 $string['settings_connection_oneroster_sync_agents_desc'] = 'Enable synchronization of user agents. A user agent expresses the relationship between humans e.g. a student is being linked to its parents';
 $string['settings_connection_oneroster_sync_groups'] = 'Groups';
-$string['settings_connection_oneroster_sync_groups_desc'] = 'Enable synchronization of groups. A course may have one or more groups of students. This setting will synchronize the groups and group memberships.';
+$string['settings_connection_oneroster_sync_groups_desc'] = 'Enable synchronization of groups. A course may have one or more groups of students. This setting will try to synchronize groups and group memberships, using enrolment attributes like the term of an enrolment.';
