@@ -51,9 +51,19 @@ use enrol_oneroster\local\v1p1\endpoints\rostering as rostering_endpoint;
 use enrol_oneroster\local\entities\org as org_entity;
 use enrol_oneroster\local\entities\school as school_entity;
 use enrol_oneroster\local\entities\user as user_entity;
+use enrol_oneroster\local\entities\term as term_entity;
 use moodle_url;
 use progress_trace;
 use stdClass;
+
+function uuid_make($string){
+    return substr($string, 0, 8 ) .'-'.
+    substr($string, 8, 4) .'-'.
+    substr($string, 12, 4) .'-'.
+    substr($string, 16, 4) .'-'.
+    substr($string, 20);
+  }
+
 
 /**
  * One Roster v1p1 client.
@@ -294,6 +304,7 @@ EOF;
      */
     public function sync_school(school_entity $school, ?DateTime $onlysince = null, ?array $filter = null): void {
         global $CFG, $DB;
+        require_once("{$CFG->dirroot}/group/lib.php");
         // Updating the category for this school.
         $this->update_or_create_category($school);
 
@@ -328,6 +339,8 @@ EOF;
         $classes = $school->get_classes([], $classfilter);
         // get class snapshot cache
         $snapshots = $this->container->get_cache_factory()->get_class_snapshot_cache();
+        // use class groups
+        $use_class_groups = get_config('enrol_oneroster', 'oneroster_sync_groups');
         foreach ($classes as $class) {
             // get class snapshot
             $sourcedid = $class->get('sourcedId');
@@ -363,7 +376,6 @@ EOF;
 
             // update or create class
             $localcourse = $this->update_or_create_course($class);
-
             $this->get_trace()->output(
                 sprintf(
                     "Getting existing enrollments for course '%s' with id %s",
@@ -430,9 +442,6 @@ EOF;
                         $error_count++;
                         $this->get_trace()->output("Error synchronising student '{$student->get('username')}'", 4);
                         $this->get_trace()->output("Error '{$e->getMessage()}'", 4);
-                        // if ($CFG->debugdeveloper) { // DEBUG_DEVELOPER
-                        //     $this->get_trace()->output($e->getTraceAsString(), 4);
-                        // }
                     }
                 }
 
@@ -451,6 +460,24 @@ EOF;
                 $this->get_trace()->output(sprintf("Fetching enrolments data for '%s'", $class->get('title')), 5);
                 foreach ($class->get_enrollments() as $enrollment) {
                     $this->update_or_create_enrolment($enrollment);
+                    // feature: course group management
+                    // description: add user to group
+                    if ($use_class_groups) {
+                        // add user to group using the enrollment term, if available
+                        $enrolment_term = $enrollment->get_enrolment_term();
+                        if ($enrolment_term) {
+                            // try to find if the current course has a group associated with the term
+                            $course_group = $this->create_course_group_from_term($localcourse, $enrolment_term);
+                            // get remote user
+                            $userentity = $enrollment->get_user_entity();
+                            // find local user
+                            $localuserid = $this->get_user_mapping_for_user($userentity);
+                            if ($localuserid) {
+                                // add group membership
+                                groups_add_member($course_group, $localuserid, 'enrol_oneroster');
+                            }
+                        }
+                    }
                 }
             }
             foreach ($this->existingroleassignments as $instanceid => $ra) {
@@ -483,7 +510,13 @@ EOF;
                             $localuser->username,
                             $localcourse->id
                         ), 5);
-
+                        // feature: course group management
+                        // description: remove user from groups
+                        if (is_array($localcourse->groups)) {
+                            foreach ($localcourse->groups as $group) {
+                                groups_remove_member($group, $userid);
+                            }
+                        }
                         $this->get_plugin_instance()->unenrol_user(
                             $instance,
                             $userid
@@ -505,6 +538,43 @@ EOF;
             // and update snapshot cache
             $snapshots->set($data->sourcedId, $data);
         }
+    }
+
+    /**
+     * Create course group using the given academic session
+     * @param \stdClass $course
+     * @param term_entity $term
+     * @return \stdClass
+     */
+    protected function create_course_group_from_term(stdClass $course, term_entity $term): stdClass {
+        global $DB;
+        // if course groups are not enabled
+        if (!is_array($course->groups)) {
+            // get groups
+            $course->groups = $DB->get_records('groups', ['courseid' => $course->id]);
+        }
+        // generate group idnumber from course->idnumber and term->sourcedId
+        $termid = $term->get('sourcedId');
+        $id = array('class' => $course->idnumber, 'term' => $termid);
+        $idnumber = uuid_make(md5(json_encode($id)));
+        // try to find a course group with the same idnumber
+        $found = array_filter($course->groups, function($group) use ($idnumber) {
+            return $group->idnumber == $idnumber;
+        });
+        // if group is found, return it
+        if (count($found) > 0) {
+            return reset($found);
+        }
+        // otherwise, create a new group
+        $group = new stdClass();
+        $group->courseid = $course->id;
+        $group->name = $term->get('title');
+        $group->idnumber = $idnumber; // set idnumber
+        $group->timecreated = time();
+        $group->timemodified = time();
+        $group->id = $DB->insert_record('groups', $group);
+        $course->groups[] = $group;
+        return $group;
     }
 
     /**
@@ -680,6 +750,7 @@ EOF;
         return $localcourse;
     }
 
+    
     /**
      * Update or create a Moodle User based on an entity representing a user.
      *
@@ -1011,13 +1082,6 @@ EOF;
                 $this->add_metric('enrollment', 'update');
             }
         } else {
-            // $this->get_trace()->output(sprintf(
-            //     "Enroling user %s into %s from %d to %d",
-            //     $userentity->get('identifier'),
-            //     $instance->courseid,
-            //     $enroldata->timestart,
-            //     $enroldata->timeend
-            // ), 5);
             $this->get_plugin_instance()->enrol_user(
                 $instance,
                 $moodleuserid,
@@ -1040,14 +1104,6 @@ EOF;
             if ($ras) {
                 return;
             }
-            // if ($CFG->debugdeveloper) {
-            //     $this->get_trace()->output(
-            //         "Updating role assignment for " .
-            //         $userentity->get('identifier') .
-            //         " in {$instance->courseid}",
-            //         5);
-            // }
-            // asign role
             role_assign($moodleroleid, $moodleuserid, $context->id, $component, $itemid);
         }
 

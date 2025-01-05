@@ -292,6 +292,14 @@ if ($ADMIN->fulltree) {
         $availableschools[''] = get_string('none', 'admin');
     }
 
+    $settings->add(new admin_setting_configselect(
+        'enrol_oneroster/oneroster_sync_groups',
+        get_string('settings_connection_oneroster_sync_groups', 'enrol_oneroster'),
+        get_string('settings_connection_oneroster_sync_groups_desc', 'enrol_oneroster'),
+        0,
+        $yesno
+    ));
+
     $settings->add(new admin_setting_configmultiselect(
         'enrol_oneroster/datasync_schools',
         get_string('settings_datasync_schools', 'enrol_oneroster'),
