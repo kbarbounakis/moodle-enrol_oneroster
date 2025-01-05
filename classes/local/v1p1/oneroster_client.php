@@ -51,6 +51,7 @@ use enrol_oneroster\local\v1p1\endpoints\rostering as rostering_endpoint;
 use enrol_oneroster\local\entities\org as org_entity;
 use enrol_oneroster\local\entities\school as school_entity;
 use enrol_oneroster\local\entities\user as user_entity;
+use enrol_oneroster\local\entities\term as term_entity;
 use moodle_url;
 use progress_trace;
 use stdClass;
@@ -303,6 +304,7 @@ EOF;
      */
     public function sync_school(school_entity $school, ?DateTime $onlysince = null, ?array $filter = null): void {
         global $CFG, $DB;
+        require_once("{$CFG->dirroot}/group/lib.php");
         // Updating the category for this school.
         $this->update_or_create_category($school);
 
@@ -544,15 +546,16 @@ EOF;
      * @param \stdClass $term
      * @return \stdClass
      */
-    protected function create_course_group_from_term(stdClass $course, stdClass $term): stdClass {
+    protected function create_course_group_from_term(stdClass $course, term_entity $term): stdClass {
         global $DB;
         // if course groups are not enabled
         if (!is_array($course->groups)) {
             // get groups
             $course->groups = $DB->get_records('groups', ['courseid' => $course->id]);
         }
-        // generate group idnumber from course->idnumber and term->sourcedid
-        $id = array('class' => $course->idnumber, 'term' => $term->sourcedid);
+        // generate group idnumber from course->idnumber and term->sourcedId
+        $termid = $term->get('sourcedId');
+        $id = array('class' => $course->idnumber, 'term' => $termid);
         $idnumber = uuid_make(md5(json_encode($id)));
         // try to find a course group with the same idnumber
         $found = array_filter($course->groups, function($group) use ($idnumber) {
@@ -560,18 +563,17 @@ EOF;
         });
         // if group is found, return it
         if (count($found) > 0) {
-            return $found[0];
+            return reset($found);
         }
         // otherwise, create a new group
         $group = new stdClass();
         $group->courseid = $course->id;
-        $group->name = $term->name;
+        $group->name = $term->get('title');
         $group->idnumber = $idnumber; // set idnumber
-        $group->description = $term->name; // use academic session name as description
-        $group->enrolmentkey = '';
         $group->timecreated = time();
         $group->timemodified = time();
         $group->id = $DB->insert_record('groups', $group);
+        $course->groups[] = $group;
         return $group;
     }
 

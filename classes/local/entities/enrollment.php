@@ -176,7 +176,7 @@ class enrollment extends entity implements enrollment_representation {
         return $this->get_class_entity();
     }
 
-    public function get_enrolment_term(): ?stdClass {
+    public function get_enrolment_term() {
         $metadata = $this->get('metadata');
         if (empty($metadata)) {
             return null;

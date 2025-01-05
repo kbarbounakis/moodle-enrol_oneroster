@@ -63,5 +63,5 @@ interface enrollment_representation {
      *
      * @return  stdClass
      */
-    public function get_enrolment_term(): ?stdClass;
+    public function get_enrolment_term();
 }
