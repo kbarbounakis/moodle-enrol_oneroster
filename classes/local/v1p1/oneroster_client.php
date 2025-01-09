@@ -376,6 +376,9 @@ EOF;
 
             // update or create class
             $localcourse = $this->update_or_create_course($class);
+            if (!$localcourse) {
+                continue;
+            }
             $this->get_trace()->output(
                 sprintf(
                     "Getting existing enrollments for course '%s' with id %s",
@@ -710,7 +713,7 @@ EOF;
      * @param   course_representation $entity An entity representing a course category
      * @return  stdClass
      */
-    protected function update_or_create_course(course_representation $entity): stdClass {
+    protected function update_or_create_course(course_representation $entity): ?stdClass {
         global $CFG, $DB;
 
         require_once("{$CFG->dirroot}/course/lib.php");
@@ -741,6 +744,22 @@ EOF;
                 $this->add_metric('course', 'update');
             }
         } else {
+            // check if course is inactive
+            $exclude_inactive = get_config('enrol_oneroster', 'oneroster_exclude_inactive');
+            // inactive courses have already marked as invisible (mdl_course.visible = 0)
+            if ($exclude_inactive && $remotecourse->visible == false) {
+                $this->get_trace()->output(
+                    sprintf(
+                        "Excluding course '%s' with id '%s' because it has been marked as inactive.",
+                        $remotecourse->fullname,
+                        $remotecourse->idnumber
+                    ),
+                    5
+                );
+                // do not create course if it is inactive
+                $this->add_metric('course', 'exclude');
+                return null;
+            }
             $localcourse = create_course($remotecourse);
             $this->add_metric('course', 'create');
         }
@@ -1292,6 +1311,7 @@ EOF;
                 'create' => 0,
                 'update' => 0,
                 'delete' => 0,
+                'exclude' => 0,
             ];
         }
 
