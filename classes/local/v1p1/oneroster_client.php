@@ -210,14 +210,15 @@ trait oneroster_client {
         }
         
         $this->get_trace()->output("Completed synchronisation of Rostering information");
-        $this->get_trace()->output(sprintf("Entity\t\tCreate\tUpdate\tDelete"), 1);
+        $this->get_trace()->output(sprintf("Entity\t\tCreate\tUpdate\tExclude\tDelete"), 1);
         foreach ($this->get_metrics() as $thing => $actions) {
             $this->get_trace()->output(
                 sprintf(
-                    "Entity '%s'\t%d\t%d\t%d",
+                    "Entity '%s'\t%d\t%d\t%d\t%d",
                     $thing,
                     $actions['create'],
                     $actions['update'],
+                    $actions['exclude'],
                     $actions['delete']
                 ),
                 1
