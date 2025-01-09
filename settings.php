@@ -300,6 +300,14 @@ if ($ADMIN->fulltree) {
         $yesno
     ));
 
+    $settings->add(new admin_setting_configselect(
+        'enrol_oneroster/oneroster_exclude_inactive',
+        get_string('settings_connection_oneroster_exclude_inactive', 'enrol_oneroster'),
+        get_string('settings_connection_oneroster_exclude_inactive_desc', 'enrol_oneroster'),
+        1,
+        $yesno
+    ));
+
     $settings->add(new admin_setting_configmultiselect(
         'enrol_oneroster/datasync_schools',
         get_string('settings_datasync_schools', 'enrol_oneroster'),
