@@ -628,25 +628,23 @@ EOF;
      */
     protected function ensure_course_enrolment_instance_exists(stdClass $course): void {
         global $DB;
-
-        if (array_key_exists($course->idnumber, $this->instances)) {
-            // The entry already exists in the cache.
-            return;
-        }
-
+        // try to get instance
         $instance = $DB->get_record('enrol', [
             'courseid' => $course->id,
             'enrol' => 'oneroster',
         ]);
-
+        // get status based on the visibility of the course
+        $status = $course->visible == false ? 1 : 0;
         if ($instance) {
             // A record exists, add it to the list.
             $this->instances[$course->idnumber] = $instance;
-
+            // enable or disable enrolment instance
+            $this->get_plugin_instance()->update_instance($instance, (object)[ 'status' => $status ]);
+            // and exit
             return;
         }
-
-        $enrolid = $this->get_plugin_instance()->add_instance($course);
+        // add instance
+        $enrolid = $this->get_plugin_instance()->add_instance($course, ['status' => $status ]);
         $this->instances[$course->idnumber] = $DB->get_record('enrol', ['id' => $enrolid]);
     }
 
