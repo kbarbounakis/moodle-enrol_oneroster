@@ -182,7 +182,7 @@ class enrollment extends entity implements enrollment_representation {
             return null;
         }
         if (is_string($metadata->term)) {
-            return $this->container->get_entity_factory()->fetch_term_by_id($metadata->term);
+            return $this->container->get_entity_factory()->fetch_academic_session_by_id($metadata->term);
         }
         return null;
     }
