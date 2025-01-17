@@ -88,3 +88,11 @@ $string['settings_connection_oneroster_sync_groups'] = 'Groups';
 $string['settings_connection_oneroster_sync_groups_desc'] = 'Enable synchronization of groups. A course may have one or more groups of students. This setting will try to synchronize groups and group memberships, using enrolment attributes like the term of an enrolment.';
 $string['settings_connection_oneroster_exclude_inactive'] = 'Exclude inactive courses';
 $string['settings_connection_oneroster_exclude_inactive_desc'] = 'Exclude inactive courses from the synchronization process. This setting will only synchronize courses that are active in the OneRoster API.';
+$string['settings_connection_oneroster_user_metadata'] = 'User metadata';
+$string['settings_connection_oneroster_user_metadata_desc'] = 'Define the metadata of a user that is going to be mapped to the user profile fields in Moodle.';
+$string['settings_connection_oneroster_user_department'] = 'department';
+$string['settings_connection_oneroster_user_department_desc'] = 'Define the attribute of a user that is going to be mapped to the department field in Moodle. e.g. Use field "alternateMatriculationNumber" provided by OneRoster producer and map it to "department" field in Moodle.';
+$string['settings_connection_oneroster_user_institution'] = 'institution';
+$string['settings_connection_oneroster_user_institution_desc'] = 'Define the attribute of a user that is going to be mapped to the institution field in Moodle. e.g. Use field "matriculationNumber" provided by OneRoster producer and map it to "institution" field in Moodle.';
+
+

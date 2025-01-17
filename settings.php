@@ -205,6 +205,29 @@ if ($ADMIN->fulltree) {
         )
     );
 
+    // User metadata.
+    $settings->add(new admin_setting_heading(
+        'enrol_oneroster/user_metadata',
+        new lang_string('settings_connection_oneroster_user_metadata', 'enrol_oneroster'),
+        new lang_string('settings_connection_oneroster_user_metadata_desc', 'enrol_oneroster')
+    ));
+
+    // User metadata - department.
+    $settings->add(new admin_setting_configtext(
+        'enrol_oneroster/user_department_map',
+        get_string('settings_connection_oneroster_user_department', 'enrol_oneroster'),
+        get_string('settings_connection_oneroster_user_department_desc', 'enrol_oneroster'),
+        ''
+    ));
+
+    // User metadata - department.
+    $settings->add(new admin_setting_configtext(
+        'enrol_oneroster/user_institution_map',
+        get_string('settings_connection_oneroster_user_institution', 'enrol_oneroster'),
+        get_string('settings_connection_oneroster_user_institution_desc', 'enrol_oneroster'),
+        ''
+    ));
+
 
     // Role mappings for the following One Roster roles:
     // - student;
