@@ -788,6 +788,22 @@ EOF;
         $remoteuser->auth = $this->get_config_setting('newuser_auth');
         $remoteuser->confirmed = true;
 
+        $metadata = $entity->get('metadata');
+        if ($metadata) {
+            $department_map = get_config('enrol_oneroster', 'user_department_map');
+            if (empty($department_map) == FALSE) {
+                if (property_exists($metadata, $department_map)) {
+                    $remoteuser->department = $metadata->{$department_map};
+                }
+            }
+            $institution_map = get_config('enrol_oneroster', 'user_institution_map');
+            if (empty($institution_map) == FALSE) {
+                if (property_exists($metadata, $institution_map)) {
+                    $remoteuser->institution = $metadata->{$institution_map};
+                }
+            }
+        }
+
         if ($this->get_user_mapping($remoteuser->idnumber)) {
             $localuser = $this->update_existing_user($entity, $remoteuser);
         } else {
